@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  flask_app:
+    container_name: flask_app
+    image: dockerhub-flask_live_app:1.0.0
+    build: 
+      context: ./bovicare-api
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./bovicare-api:/app
+    environment:
+      - FLASK_APP=app.py
+      - DB_URL=postgresql://postgres:postgres@flask_db:5432/bovicare
+    depends_on:
+      - flask_db
+
+  frontend:
+    container_name: react_frontend
+    build:
+      context: ./bovicare-web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - flask_app
+
+  flask_db:
+    container_name: flask_db
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=bovicare
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"  # Acesse o pgAdmin via http://localhost:5050
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=kauanalexander123@hotmail.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+    depends_on:
+      - flask_db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  pgdata: {}
+  pgadmin_data: {}
