@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>Bovicare</h1>
-    <p>Bovicare é um sistema web desenvolvido com Flask, ReactJS, Python, Docker e PostgreSQL. O objetivo do Bovicare é fornecer uma plataforma robusta e escalável para o gerenciamento de informações relacionadas ao cuidado de bovinos.</p>
+    <p>Bovicare é um sistema web desenvolvido com Flask, ReactJS, Python, Docker e PostgreSQL. O objetivo do Bovicare é fornecer uma plataforma robusta e escalável para o gerenciamento de informações relacionadas ao cuidado de bovinos, e como descrito ao decorrer da disciplina de Desenvolvimento api back-end, foi utilizado os conceitos apresentados de S.O.L.I.D, e os conceitos de aplicacao do CLEAN CODE, e com o CRUD </p>
 
   <h2>Tecnologias Utilizadas</h2>
     <ul>
