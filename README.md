@@ -17,7 +17,7 @@
         <li><img src="https://img.icons8.com/color/48/000000/python.png" alt="Python logo"><strong>Linguagem:</strong> Python</li>
     </ul>
 
-  <h2>Funcionalidades</h2>
+  <h2>Funcionalidades do sistema</h2>
     <ul>
         <li>Gerenciamento de informações de bovinos</li>
         <li>Registro de dados de saúde e alimentação</li>
