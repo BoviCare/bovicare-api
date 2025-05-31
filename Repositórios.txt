@@ -1,0 +1,45 @@
+Repositórios:
+
+Frontend: https://github.com/ALEXFILHO97/BOVICARE---WEB.git
+
+Backend: https://github.com/ALEXFILHO97/BOVICARE---API.git
+
+Alterações Realizadas
+Backend (API - Flask)
+Remoção Definitiva do Cadastro Público de Usuários:
+A funcionalidade de cadastro direto foi retirada. O sistema passará a permitir cadastro de usuários exclusivamente por administradores através de uma aba interna, garantindo maior controle de acesso.
+
+Início da Estrutura para Integração com Mapas:
+Foram iniciadas as adaptações necessárias para uso de uma API de geolocalização. Essa estrutura servirá para exibir localização dos animais em mapas, com foco em rastreamento e visualização inteligente.
+
+Ajustes de Segurança e Performance:
+Pequenas melhorias foram aplicadas para reduzir o tempo de resposta das rotas e tornar o sistema mais estável para futuras implementações.
+
+Frontend
+Aprimoramento Visual com Base no Figma:
+Foram realizados diversos ajustes para alinhar a interface ao design original:
+
+Correção de margens e espaçamentos
+
+Fontes e botões com tamanho e disposição mais precisos
+
+Reorganização de componentes para melhorar a estética geral
+
+Maior atenção à responsividade
+
+Preparação para Integração com Módulo de Mapas:
+Algumas partes do código já estão organizadas para permitir a futura visualização dos animais em tempo real, com base em dados de geolocalização.
+
+Limpeza de Código e Organização:
+Foram feitas pequenas refatorações visando legibilidade e eficiência para desenvolvimentos futuros.
+
+Próximas Etapas
+Painel Interno para Administradores:
+O cadastro de novos usuários será incorporado diretamente no sistema, disponível apenas para administradores via painel exclusivo.
+
+Integração com Inteligência Artificial (IA):
+Estuda-se a possibilidade de incorporar um módulo de IA para analisar sintomas relatados em gados e sugerir possíveis doenças e tratamentos, com base em dados veterinários.
+
+Finalização Visual Completa com Figma:
+As próximas entregas terão foco total em seguir o Figma com fidelidade, garantindo uma experiência visual profissional e funcional.
+
