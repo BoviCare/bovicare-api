@@ -1,12 +1,19 @@
-import asyncio
 from flask import request, jsonify, make_response
 from app import app, db
 from app.models import User, PasswordReset, Animal, Weighing, Activity, Herd, UserHerd
-from app import rag_service
+from app import rag_client
+from config import Config
+import logging
+
+logger = logging.getLogger(__name__)
+
 # ===== ROTA PARA CHAT IA (RAG) =====
 
-@app.route('/api/chat/diagnose', methods=['POST'])
+@app.route('/api/chat/diagnose', methods=['POST', 'OPTIONS'])
 def chat_diagnose():
+    """
+    Chat endpoint that proxies requests to the RAG service.
+    """
     try:
         if request.method == 'OPTIONS':
             return make_response()
@@ -17,19 +24,66 @@ def chat_diagnose():
         if not message or not isinstance(message, str) or not message.strip():
             return make_response(jsonify({'message': 'Mensagem inválida'}), 400)
 
-        if rag_service is None:
-            return make_response(jsonify({'message': 'Serviço de diagnóstico indisponível'}), 503)
+        # Query RAG service via HTTP client
+        result = rag_client.query_rag(
+            message=message.strip(),
+            top_k=5,
+            use_reranking=True,
+            rag_service_url=Config.RAG_SERVICE_URL,
+            timeout=Config.RAG_SERVICE_TIMEOUT
+        )
 
-        result = asyncio.run(rag_service.ask(message.strip(), top_k=5))
+        return make_response(jsonify(result), 200)
 
+    except rag_client.RAGServiceUnavailableError as e:
+        logger.error(f"RAG service unavailable: {str(e)}")
         return make_response(jsonify({
-            'reply': result.get('answer', ''),
-            'sources': result.get('sources', [])
-        }), 200)
+            'message': 'Serviço de diagnóstico temporariamente indisponível. Verifique se o servidor RAG está rodando.',
+            'error': str(e)
+        }), 503)
+    
+    except rag_client.RAGTimeoutError as e:
+        logger.error(f"RAG service timeout: {str(e)}")
+        return make_response(jsonify({
+            'message': 'O serviço de diagnóstico demorou muito para responder. Tente novamente.',
+            'error': str(e)
+        }), 504)
+    
+    except rag_client.RAGClientError as e:
+        logger.error(f"RAG client error: {str(e)}")
+        return make_response(jsonify({
+            'message': 'Erro ao processar sua solicitação.',
+            'error': str(e)
+        }), 500)
 
     except Exception as e:
-        print(f"DEBUG: Erro no chat diagnose: {str(e)}")
-        return make_response(jsonify({'message': f'Erro ao processar diagnóstico: {str(e)}'}), 500)
+        logger.error(f"Unexpected error in chat endpoint: {str(e)}", exc_info=True)
+        return make_response(jsonify({
+            'message': f'Erro inesperado ao processar diagnóstico: {str(e)}'
+        }), 500)
+
+
+@app.route('/api/health/rag', methods=['GET'])
+def rag_health():
+    """
+    Health check endpoint for the RAG service.
+    Returns the status of the RAG service connection.
+    """
+    try:
+        health_status = rag_client.check_rag_health(
+            rag_service_url=Config.RAG_SERVICE_URL,
+            timeout=5
+        )
+        
+        status_code = 200 if health_status['status'] == 'healthy' else 503
+        return make_response(jsonify(health_status), status_code)
+    
+    except Exception as e:
+        logger.error(f"Error checking RAG health: {str(e)}")
+        return make_response(jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500)
 
 from app.email_service import email_service, sms_service
 import os

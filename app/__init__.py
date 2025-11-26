@@ -1,11 +1,5 @@
-import asyncio
 import os
-import sys
 from flask import Flask
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-rag_path = os.path.join(project_root, "RAG")
-if os.path.isdir(rag_path) and rag_path not in sys.path:
-    sys.path.insert(0, rag_path)
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from os import environ
@@ -14,12 +8,8 @@ app = Flask(__name__)
 app.config.from_object('config.Config')
 db = SQLAlchemy(app)
 
-try:
-    from RAG.rag_service import RAGService
-    rag_service = RAGService()
-except Exception as rag_import_error:
-    rag_service = None
-    print(f"⚠️ Não foi possível carregar o RAGService: {rag_import_error}")
+# Import RAG client for HTTP communication with RAG service
+from app import rag_client
 
 # Configuração CORS manual mais simples
 @app.after_request
@@ -37,8 +27,6 @@ from app import api_v1
 with app.app_context():
     db.create_all()
     print("✅ Banco de dados inicializado com sucesso!")
-
-    should_start_rag = os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug
 
     # Tentativa segura de migrar a coluna profile_photo_url se não existir
     try:
@@ -69,13 +57,4 @@ with app.app_context():
         except Exception:
             pass
 
-    if rag_service and should_start_rag:
-        try:
-            asyncio.run(rag_service.startup())
-            print("✅ Serviço RAG inicializado")
-        except RuntimeError:
-            # já existe loop rodando; inicia de forma assíncrona
-            loop = asyncio.get_event_loop()
-            loop.create_task(rag_service.startup())
-        except Exception as e:
-            print(f"⚠️ Falha ao iniciar o serviço RAG: {e}")
+    print("✅ Flask API inicializada. RAG service acessível via HTTP client.")
