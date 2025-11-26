@@ -11,17 +11,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copiar o requirements.txt para instalar as dependências do Python
-COPY bovicare-api/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 
 # Instalar pacotes Python
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Copiar código da API
-COPY bovicare-api/ /app/
-
-# Copiar módulo RAG
-COPY RAG /app/RAG
+COPY . /app/
 
 EXPOSE 5003
 
