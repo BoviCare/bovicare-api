@@ -1264,6 +1264,128 @@ def get_weight_report():
         print(f"DEBUG: Erro ao gerar relatório de peso: {str(e)}")
         return make_response(jsonify({'message': f'Erro ao gerar relatório: {str(e)}'}), 500)
 
+@app.route('/api/weight/performance-report', methods=['GET'])
+def get_performance_report():
+    """Gerar relatório de desempenho (engorda) com GMD e status"""
+    try:
+        header_user_id = request.headers.get('X-User-Id') or request.headers.get('X-User-ID')
+        param_user_id = request.args.get('user_id', type=int)
+        effective_user_id = None
+        if header_user_id and str(header_user_id).isdigit():
+            effective_user_id = int(header_user_id)
+        elif param_user_id:
+            effective_user_id = param_user_id
+
+        query = Animal.query
+        if effective_user_id is not None:
+            query = query.filter(Animal.user_id == effective_user_id)
+
+        animals = query.all()
+        performance_data = []
+
+        for animal in animals:
+            # Buscar as duas últimas pesagens
+            weighings = (
+                Weighing.query
+                .filter_by(animal_id=animal.id)
+                .order_by(Weighing.date.desc())
+                .limit(2)
+                .all()
+            )
+
+            current_weight = None
+            previous_weight = None
+            current_date = None
+            previous_date = None
+
+            if len(weighings) >= 2:
+                current_weight = weighings[0].weight
+                current_date = weighings[0].date
+                previous_weight = weighings[1].weight
+                previous_date = weighings[1].date
+            elif len(weighings) == 1:
+                current_weight = weighings[0].weight
+                current_date = weighings[0].date
+                # Usar peso de entrada como peso anterior
+                if animal.entry_weight:
+                    previous_weight = animal.entry_weight
+                    # Usar data de criação do animal como data anterior
+                    previous_date = animal.created_at.date() if animal.created_at else None
+            else:
+                # Se não há pesagens, usar peso de entrada como atual
+                if animal.entry_weight:
+                    current_weight = animal.entry_weight
+                else:
+                    continue  # Pular animais sem dados de peso
+
+            # Calcular ganho de peso
+            weight_gain = None
+            gmd = None
+            status = 'Sem dados'
+
+            if current_weight is not None and previous_weight is not None:
+                weight_gain = round(current_weight - previous_weight, 2)
+                
+                # Calcular GMD (Ganho Médio Diário)
+                if current_date and previous_date:
+                    days_diff = (current_date - previous_date).days
+                    if days_diff > 0:
+                        gmd = round(weight_gain / days_diff, 3)
+                    else:
+                        gmd = 0
+                else:
+                    # Assumir 30 dias se não tiver datas
+                    gmd = round(weight_gain / 30, 3)
+
+                # Determinar status baseado no GMD
+                if gmd >= 1.4:
+                    status = 'Excelente'
+                elif gmd >= 1.0:
+                    status = 'Bom'
+                elif gmd >= 0.6:
+                    status = 'Regular'
+                else:
+                    status = 'Crítico'
+
+            performance_data.append({
+                'id': f"#{animal.id}",
+                'name': animal.name or animal.earring,
+                'breed': animal.breed or 'N/A',
+                'previous_weight': previous_weight,
+                'current_weight': current_weight,
+                'weight_gain': weight_gain,
+                'gmd': gmd,
+                'status': status
+            })
+
+        # Calcular resumo
+        total_animals = len(performance_data)
+        excellent_count = sum(1 for a in performance_data if a['status'] == 'Excelente')
+        good_count = sum(1 for a in performance_data if a['status'] == 'Bom')
+        regular_count = sum(1 for a in performance_data if a['status'] == 'Regular')
+        critical_count = sum(1 for a in performance_data if a['status'] == 'Crítico')
+        
+        avg_gmd = None
+        gmd_values = [a['gmd'] for a in performance_data if a['gmd'] is not None]
+        if gmd_values:
+            avg_gmd = round(sum(gmd_values) / len(gmd_values), 3)
+
+        return make_response(jsonify({
+            'animals': performance_data,
+            'summary': {
+                'total': total_animals,
+                'excellent': excellent_count,
+                'good': good_count,
+                'regular': regular_count,
+                'critical': critical_count,
+                'average_gmd': avg_gmd
+            }
+        }), 200)
+
+    except Exception as e:
+        print(f"DEBUG: Erro ao gerar relatório de desempenho: {str(e)}")
+        return make_response(jsonify({'message': f'Erro ao gerar relatório: {str(e)}'}), 500)
+
 @app.route('/api/cattle/filter', methods=['POST'])
 def filter_cattle():
     try:
