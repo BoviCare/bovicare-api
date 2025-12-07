@@ -1,0 +1,91 @@
+name: Deploy BoviCare API
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: bovicare-api
+  PROJECT_NAME: bovicare
+  SERVICE_NAME: api
+  ENV_NAME: production
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./bovicare-api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsEcrPushRole
+          role-external-id: github-actions-ecr-push
+          role-duration-seconds: 900
+          role-skip-session-tagging: true
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get EC2 Instance ID
+        id: get-instance
+        run: |
+          INSTANCE_ID=$(aws ssm get-parameter --name "/${{ env.PROJECT_NAME }}/${{ env.ENV_NAME }}/ec2_instance_id" --query "Parameter.Value" --output text)
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy to EC2 via SSM
+        if: steps.get-instance.outputs.instance_id != ''
+        uses: aws-actions/aws-ssm-send-command@v2
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          instance-ids: ${{ steps.get-instance.outputs.instance_id }}
+          working-directory: /opt/${{ env.PROJECT_NAME }}
+          command: |
+            # Navigate to app directory
+            cd /opt/${{ env.PROJECT_NAME }}
+            
+            # Login to ECR
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # Pull latest image
+            docker-compose pull ${{ env.SERVICE_NAME }}
+            
+            # Restart specific service
+            docker-compose up -d --no-deps ${{ env.SERVICE_NAME }}
+            
+            # Prune old images
+            docker image prune -f
+          comment: Deploying ${{ env.SERVICE_NAME }} service
+

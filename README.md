@@ -9,7 +9,22 @@ Backend API do BoviCare desenvolvido com Flask, Python, Docker e PostgreSQL. Est
 - Conta OpenAI (para API key)
 - (Opcional) Conta Milvus Cloud (para vector database)
 
-## 🚀 Setup Completo do Projeto
+## 🚀 Deployment
+
+Este repositório está configurado com **GitHub Actions** para deploy automático na AWS (EC2).
+
+### Fluxo de Deploy
+1.  Qualquer push na branch `main` dispara o workflow de deploy.
+2.  A imagem Docker é construída e enviada para o Amazon ECR.
+3.  O serviço na instância EC2 é atualizado via AWS Systems Manager (SSM).
+
+### Configuração Necessária
+Certifique-se de que as seguintes Secrets estão configuradas no repositório:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_ACCOUNT_ID`
+
+## 🚀 Setup Completo do Projeto (Local)
 
 O BoviCare é uma aplicação de microserviços composta por 3 repositórios separados. Para executar a aplicação completa, você precisa clonar todos os repositórios.
 
