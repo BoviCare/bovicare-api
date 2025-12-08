@@ -26,8 +26,8 @@ from app import api_v1
 
 with app.app_context():
     try:
-        db.create_all()
-        print("✅ Banco de dados inicializado com sucesso!")
+    db.create_all()
+    print("✅ Banco de dados inicializado com sucesso!")
     except Exception as db_init_error:
         # Gracefully handle DB connection errors (e.g., during setup script or if DB is not available)
         print(f"⚠️  Database initialization skipped: {str(db_init_error)}")
