@@ -7,8 +7,4 @@ werkzeug
 flask-mail
 requests
 gunicorn
-sentence-transformers
-torch
-accelerate
-pymilvus==2.5.14
 mmh3
