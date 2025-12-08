@@ -11,10 +11,10 @@ db = SQLAlchemy(app)
 # Import RAG client for HTTP communication with RAG service
 from app import rag_client
 
-# Configuração CORS manual mais simples (permitir qualquer origem por enquanto)
+# Configuração CORS: permitir frontend deployado e localhost dev
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://18.207.95.49:3000')
+    response.headers.add('Access-Control-Allow-Origin', 'http://18.207.95.49:3000, http://localhost:3000')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-User-Name')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
