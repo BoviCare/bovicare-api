@@ -32,7 +32,6 @@ with app.app_context():
     except Exception as db_init_error:
         # Gracefully handle DB connection errors (e.g., during setup script or if DB is not available)
         print(f"⚠️  Database initialization skipped: {str(db_init_error)}")
-        print("   This is normal if running setup scripts or if the database is not yet available.")
 
     # Tentativa segura de migrar a coluna profile_photo_url se não existir
     try:
