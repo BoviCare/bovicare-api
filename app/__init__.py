@@ -11,11 +11,10 @@ db = SQLAlchemy(app)
 # Import RAG client for HTTP communication with RAG service
 from app import rag_client
 
-# Configuração CORS manual mais simples
+# Configuração CORS manual mais simples (permitir qualquer origem por enquanto)
 @app.after_request
 def after_request(response):
-    # Allow the frontend origin and needed headers including our custom X-User-* headers
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Origin', 'http://18.207.95.49:3000')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-User-Name')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
@@ -26,8 +25,8 @@ from app import api_v1
 
 with app.app_context():
     try:
-    db.create_all()
-    print("✅ Banco de dados inicializado com sucesso!")
+        db.create_all()
+        print("✅ Banco de dados inicializado com sucesso!")
     except Exception as db_init_error:
         # Gracefully handle DB connection errors (e.g., during setup script or if DB is not available)
         print(f"⚠️  Database initialization skipped: {str(db_init_error)}")
